@@ -459,14 +459,14 @@ body {
   flex-shrink: 0;
   font-family: inherit;
 }
-</tyle>
+</style>
 </head>
 <body>
 <div class="phone-frame" id="app">
 
 <div class="header">
   <button id="setup-back-btn" onclick="closeSetup()" style="display:none;background:none;border:none;font-size:17px;color:var(--green);font-weight:600;cursor:pointer;padding:4px;font-family:inherit;">‹ Takaisin</button>
-  <span id="header-icon" style="font-size:24px;">🍵️</span>
+  <span id="header-icon" style="font-size:24px;">🍽️</span>
   <h1 id="header-title">Reseptikirja</h1>
   <button class="header-btn" onclick="loadRecipes()" title="Päivitä">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-5"/></svg>
@@ -477,7 +477,7 @@ body {
 </div>
 
 <div id="main-content">
-  <div class="setup-view" id="setup-view7" style="display:none;">
+  <div class="setup-view" id="setup-view" style="display:none;">
     <div class="setup-icon">🔗</div>
     <div class="setup-title">Yhdistä reseptikirja</div>
     <div class="setup-desc">Liitä Google Sheets Apps Script -osoitteesi alle.</div>
@@ -531,11 +531,13 @@ body {
 
 <script>
 let recipes = [];
-let favorites = new Set(JSON.parse(localStorage.getItem('rk_favs') || '[]'));
+function lsGet(key, fallback) { try { return localStorage.getItem(key) ?? fallback; } catch(e) { return fallback; } }
+function lsSet(key, val) { try { localStorage.setItem(key, val); } catch(e) {} }
+let favorites = new Set(); try { favorites = new Set(JSON.parse(lsGet('rk_favs', '[]'))); } catch(e) {}
 let activeCategory = 'all';
 let activeTab = 'browse';
-let apiUrl = localStorage.getItem('rk_api_url') || '';
-let sortOrder = localStorage.getItem('rk_sort') || 'alpha';
+let apiUrl = lsGet('rk_api_url', '');
+let sortOrder = lsGet('rk_sort', 'alpha');
 
 function updateSortBtn() {
   const btn = document.getElementById('sort-btn');
@@ -551,7 +553,7 @@ function updateSortBtn() {
 
 function toggleSort() {
   sortOrder = sortOrder === 'alpha' ? 'newest' : 'alpha';
-  localStorage.setItem('rk_sort', sortOrder);
+  lsSet('rk_sort', sortOrder);
   updateSortBtn();
   renderList();
 }
@@ -561,9 +563,9 @@ function init() {
   document.getElementById('setup-view').style.display = 'none';
   document.getElementById('browse-view').style.display = 'block';
   updateSortBtn();
-  const cached = localStorage.getItem('rk_recipes');
+  const cached = lsGet('rk_recipes', null);
   if (cached) {
-    recipes = JSON.parse(cached);
+    try { recipes = JSON.parse(cached); } catch(e) { recipes = []; }
     renderFilters();
     renderList();
   } else {
@@ -602,7 +604,7 @@ function saveApiUrl() {
     return;
   }
   apiUrl = val;
-  localStorage.setItem('rk_api_url', apiUrl);
+  lsSet('rk_api_url', apiUrl);
   document.getElementById('setup-view').style.display = 'none';
   document.getElementById('browse-view').style.display = 'block';
   document.getElementById('header-title').textContent = 'Reseptikirja';
@@ -622,7 +624,7 @@ async function loadRecipes() {
       steps: parse(r.steps, []),
       tags: parse(r.tags, []),
     }));
-    localStorage.setItem('rk_recipes', JSON.stringify(recipes));
+    lsSet('rk_recipes', JSON.stringify(recipes));
     renderFilters();
     renderList();
   } catch(e) {
@@ -718,7 +720,7 @@ function renderList() {
 function toggleFav(id) {
   const key = String(id);
   if (favorites.has(key)) favorites.delete(key); else favorites.add(key);
-  localStorage.setItem('rk_favs', JSON.stringify([...favorites]));
+  lsSet('rk_favs', JSON.stringify([...favorites]));
   renderList();
 }
 
